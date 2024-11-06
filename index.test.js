@@ -1,7 +1,7 @@
 const request = require('supertest');
 const app = require('./src/app'); // Ensure you're pointing to the correct path for app
 const  {db}  = require('./db/connection'); // Import the db and model
-const {Musician} = require('./models/index')
+const {Musician, Band} = require('./models/index')
 
 beforeAll(async () => {
     // Sync the database before running any tests
@@ -80,6 +80,35 @@ describe('Musician Routes', () => {
     // Test DELETE /musicians/:id for a non-existent musician
     it('should return 404 when trying to delete a non-existent musician', async () => {
         const response = await request(app).delete('/musicians/99999'); // Random ID
+
+        expect(response.status).toBe(404);
+        
+    });
+});
+
+describe('Band Routes', () => {
+    it('should return all bands', async () => {
+        
+        await Band.create({ name: 'John Doe', genre: 'Rock' });
+
+        const response = await request(app).get('/bands');
+
+        expect(response.status).toBe(200); // Status code should be 200
+        expect(Array.isArray(response.body)).toBe(true); // Should return an array of bands
+        expect(response.body.length).toBeGreaterThan(0); // Should contain at least 1 band
+        
+    });
+
+    it('GET /bands/:id should return a band and its musicians', async () => {
+        const band = await Band.create({ name: 'Test', genre: 'Test' });
+
+        const response = await request(app).get(`/bands/${band.id}`);
+
+        expect(response.status).toBe(200);
+    });
+
+    it('GET /bands/:id should return 404 if band is not found', async () => {
+        const response = await request(app).get('/bands/99999'); // Non-existing ID
 
         expect(response.status).toBe(404);
         
